@@ -1,0 +1,27 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+.export-venv/
+venv/
+env/
+
+# Editors and operating systems
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Generated output and local training data
+outputs/
+runs/
+roboflow_download/
+*.log
+
+# Downloaded base models and local export intermediates
+/yolo*.pt
+/models/*.onnx
+
+# Unrelated local artifacts
+/SAP1_CLK_CLR_Circuit.json

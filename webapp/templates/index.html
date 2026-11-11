@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pothole Detection Dashboard</title>
+  <style>
+    :root {
+      --ink: #0f172a;
+      --slate: #1e293b;
+      --accent: #0ea5e9;
+      --bg: #e2e8f0;
+      --card: #ffffff;
+      --ok: #16a34a;
+      --warn: #f59e0b;
+    }
+    body {
+      margin: 0;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      background: radial-gradient(circle at 20% 0%, #f8fafc 0%, var(--bg) 60%);
+      color: var(--ink);
+    }
+    .topbar {
+      background: linear-gradient(90deg, var(--slate), #334155);
+      color: #fff;
+      padding: 16px 20px;
+      box-shadow: 0 8px 30px rgba(15, 23, 42, 0.2);
+    }
+    .topbar h1 {
+      margin: 0;
+      font-size: 1.25rem;
+      letter-spacing: 0.2px;
+    }
+    .layout {
+      max-width: 1200px;
+      margin: 20px auto;
+      padding: 0 16px 24px;
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 16px;
+    }
+    .panel {
+      background: var(--card);
+      border-radius: 14px;
+      box-shadow: 0 8px 24px rgba(15, 23, 42, 0.12);
+      overflow: hidden;
+      border: 1px solid #cbd5e1;
+    }
+    .video {
+      width: 100%;
+      display: block;
+      background: #000;
+      min-height: 320px;
+      object-fit: contain;
+    }
+    .stats {
+      padding: 14px;
+    }
+    .stats h2 {
+      margin: 0 0 10px;
+      font-size: 1rem;
+      color: var(--slate);
+    }
+    .row {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 10px 12px;
+      margin-bottom: 8px;
+      border-radius: 10px;
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      font-size: 0.95rem;
+    }
+    .value {
+      font-weight: 700;
+      color: var(--slate);
+    }
+    .status-running { color: var(--ok); }
+    .status-error { color: #dc2626; }
+    .status-starting, .status-ended { color: var(--warn); }
+    @media (max-width: 900px) {
+      .layout {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <h1>Real-Time Pothole Detection Dashboard</h1>
+  </header>
+
+  <main class="layout">
+    <section class="panel">
+      <img id="stream" src="{{ url_for('video_feed') }}" alt="Live stream" class="video" />
+    </section>
+
+    <aside class="panel stats">
+      <h2>Controls</h2>
+      <div class="row">
+        <label for="source">Camera / Source</label>
+        <input id="source" type="text" value="{{ default_source }}" style="width: 140px;" />
+      </div>
+      <div class="row">
+        <label for="model">Model path</label>
+        <input id="model" type="text" value="{{ default_model }}" style="width: 140px;" />
+      </div>
+      <div class="row">
+        <label for="conf">Confidence</label>
+        <input id="conf" type="number" min="0" max="1" step="0.01" value="{{ default_conf }}" style="width: 80px;" />
+      </div>
+      <div class="row" style="justify-content: center;">
+        <button onclick="applySettings()" style="padding:8px 14px; background: var(--accent); color:white; border:none; border-radius:8px; cursor:pointer;">Apply & Reload Stream</button>
+      </div>
+
+      <h2>Live Stats</h2>
+      <div class="row"><span>Status</span><span id="status" class="value">starting</span></div>
+      <div class="row"><span>Detections</span><span id="detections" class="value">0</span></div>
+      <div class="row"><span>FPS</span><span id="fps" class="value">0.0</span></div>
+      <div class="row"><span>Error</span><span id="error" class="value">-</span></div>
+    </aside>
+  </main>
+
+  <script>
+    function buildQuery() {
+      const source = encodeURIComponent(document.getElementById('source').value.trim());
+      const model = encodeURIComponent(document.getElementById('model').value.trim());
+      const conf = encodeURIComponent(document.getElementById('conf').value.trim());
+      return `?source=${source}&model=${model}&conf=${conf}`;
+    }
+
+    function applySettings() {
+      const query = buildQuery();
+      const img = document.getElementById('stream');
+      img.src = `/video_feed${query}&ts=${Date.now()}`; // bust cache
+      refreshStats();
+    }
+
+    async function refreshStats() {
+      try {
+        const res = await fetch(`/stats${buildQuery()}`);
+        const data = await res.json();
+
+        const statusEl = document.getElementById("status");
+        statusEl.textContent = data.status;
+        statusEl.className = `value status-${data.status}`;
+
+        document.getElementById("detections").textContent = data.detections;
+        document.getElementById("fps").textContent = data.fps;
+        document.getElementById("error").textContent = data.error || "-";
+      } catch (e) {
+        document.getElementById("error").textContent = "Unable to fetch /stats";
+      }
+    }
+
+    setInterval(refreshStats, 1000);
+    refreshStats();
+  </script>
+</body>
+</html>

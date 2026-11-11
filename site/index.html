@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta
+      name="description"
+      content="Detect potholes in road images and live camera video directly in your browser."
+    >
+    <meta name="theme-color" content="#0b1412">
+    <title>RoadWatch | Pothole Detection</title>
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+    <link rel="stylesheet" href="styles.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/onnxruntime-web@1.23.2/dist/ort.min.js"></script>
+    <script defer src="app.js"></script>
+  </head>
+  <body>
+    <header class="site-header">
+      <a class="brand" href="#top" aria-label="RoadWatch home">
+        <span class="brand-mark" aria-hidden="true">
+          <span></span><span></span><span></span>
+        </span>
+        <span>RoadWatch</span>
+      </a>
+      <div id="modelStatus" class="model-status" role="status" aria-live="polite">
+        <span class="status-dot" aria-hidden="true"></span>
+        <span>Loading detector</span>
+      </div>
+    </header>
+
+    <main id="top">
+      <section class="hero" aria-labelledby="hero-title">
+        <div class="eyebrow">On-device road inspection</div>
+        <h1 id="hero-title">See the road.<br><em>Spot the damage.</em></h1>
+        <p class="hero-copy">
+          Run a trained YOLO pothole detector on a photo or live camera feed.
+          Processing stays on your device—no image upload required.
+        </p>
+        <div class="hero-facts" aria-label="Model highlights">
+          <div><strong>92.5%</strong><span>validation precision</span></div>
+          <div><strong>88.3%</strong><span>mAP at 50%</span></div>
+          <div><strong>1 class</strong><span>pothole detection</span></div>
+        </div>
+      </section>
+
+      <section class="detector-shell" aria-labelledby="detector-title">
+        <div class="detector-head">
+          <div>
+            <span class="section-number">01</span>
+            <h2 id="detector-title">Detector</h2>
+          </div>
+          <p>Choose a source and the model will mark likely potholes.</p>
+        </div>
+
+        <div class="detector-grid">
+          <div class="viewer-column">
+            <div id="dropZone" class="viewer" tabindex="0">
+              <canvas id="viewerCanvas" hidden></canvas>
+              <div id="emptyState" class="empty-state">
+                <svg viewBox="0 0 96 96" aria-hidden="true">
+                  <path d="M18 67 36 28h24l18 39" />
+                  <path d="M48 28v39M38 47h20M32 58h32" />
+                </svg>
+                <h3>Drop a road image here</h3>
+                <p>JPG, PNG, WEBP, or use your camera</p>
+              </div>
+              <div id="workingState" class="working-state" hidden>
+                <span class="spinner" aria-hidden="true"></span>
+                <span>Inspecting frame…</span>
+              </div>
+            </div>
+
+            <div class="primary-actions">
+              <label id="uploadLabel" class="button button-primary" for="fileInput">
+                <span aria-hidden="true">↥</span> Upload image
+              </label>
+              <input id="fileInput" type="file" accept="image/jpeg,image/png,image/webp" hidden>
+              <button id="cameraButton" class="button button-secondary" type="button">
+                <span aria-hidden="true">◉</span> Start camera
+              </button>
+              <button id="stopButton" class="button button-secondary" type="button" hidden>
+                Stop camera
+              </button>
+            </div>
+
+            <div class="sample-row">
+              <span>Or try a sample:</span>
+              <button class="text-button sample-button" data-sample="assets/sample-pothole.jpg" type="button">
+                Pothole road
+              </button>
+              <button class="text-button sample-button" data-sample="assets/sample-clear-road.jpg" type="button">
+                Clear road
+              </button>
+            </div>
+          </div>
+
+          <aside class="results-column" aria-label="Detection results">
+            <div class="confidence-control">
+              <div>
+                <label for="confidence">Confidence threshold</label>
+                <output id="confidenceValue" for="confidence">35%</output>
+              </div>
+              <input id="confidence" type="range" min="25" max="90" value="35" step="1">
+              <div class="range-labels"><span>More results</span><span>More certain</span></div>
+            </div>
+
+            <div class="result-card result-card-main">
+              <span class="result-label">Potholes found</span>
+              <strong id="detectionCount">—</strong>
+              <span id="resultMessage">Choose an image or start the camera.</span>
+            </div>
+
+            <div class="mini-results">
+              <div class="result-card">
+                <span class="result-label">Top confidence</span>
+                <strong id="topConfidence">—</strong>
+              </div>
+              <div class="result-card">
+                <span class="result-label">Inference</span>
+                <strong id="inferenceTime">—</strong>
+              </div>
+            </div>
+
+            <div class="privacy-note">
+              <span aria-hidden="true">◎</span>
+              <p><strong>Private by design.</strong> Frames are processed locally in this browser and are never sent to this site.</p>
+            </div>
+          </aside>
+        </div>
+      </section>
+
+      <section class="method" aria-labelledby="method-title">
+        <div>
+          <span class="section-number">02</span>
+          <h2 id="method-title">How it works</h2>
+        </div>
+        <ol>
+          <li><span>1</span><div><strong>Capture</strong><p>Use a still road image or a live camera.</p></div></li>
+          <li><span>2</span><div><strong>Inspect</strong><p>A YOLOv8 model analyzes each frame on your device.</p></div></li>
+          <li><span>3</span><div><strong>Review</strong><p>Likely potholes are marked with confidence scores.</p></div></li>
+        </ol>
+      </section>
+
+      <section class="notice" aria-label="Important limitation">
+        <strong>Prototype notice</strong>
+        <p>
+          This detector supports road inspection research and is not a substitute for driver attention or a certified safety system.
+          Results may be affected by darkness, rain, shadows, distance, and unfamiliar road surfaces.
+        </p>
+      </section>
+    </main>
+
+    <footer>
+      <span>RoadWatch pothole detection prototype</span>
+      <a href="https://github.com/Jester-Penlza/Pothole-detection">View source on GitHub ↗</a>
+    </footer>
+
+    <video id="cameraVideo" playsinline muted hidden></video>
+    <canvas id="modelCanvas" width="640" height="640" hidden></canvas>
+  </body>
+</html>

@@ -13,18 +13,49 @@ After the first successful Pages deployment, the app is available at:
 
 Images and camera frames stay in the browser. They are not uploaded to a server.
 
-## Model results
+## Accuracy
 
-The included model was trained for one class, `pothole`, using a YOLOv8n detector.
+The saved `pothole_run50` validation results report:
 
-| Metric | Validation result |
-| --- | ---: |
-| Precision | 0.925 |
-| Recall | 0.807 |
-| mAP@0.5 | 0.883 |
-| mAP@0.5:0.95 | 0.495 |
+| Metric | Result | Practical meaning |
+| --- | ---: | --- |
+| Precision | **92.5%** | About 92.5 of every 100 reported pothole detections were correct on the validation set. |
+| Recall | **80.7%** | The model found about 80.7 of every 100 labeled potholes and missed about 19.3. |
+| mAP@0.5 | **88.3%** | Overall detection quality when a predicted box needs at least 50% overlap with the labeled box. |
+| mAP@0.5:0.95 | **49.5%** | Stricter average quality across overlap thresholds from 50% to 95%. |
 
-These results come from the saved `pothole_run50` validation output. Performance can change with lighting, weather, camera angle, road surface, and hardware.
+These figures were measured on the project's **130-image validation split**, which contains **161 labeled pothole boxes**. They describe performance on that dataset—not guaranteed accuracy on every road. Real-world results can be lower in darkness, rain, glare, heavy shadows, motion blur, unusual camera angles, distant or partly hidden potholes, and road surfaces that differ from the training data.
+
+## Detection specifications
+
+| Specification | Value |
+| --- | --- |
+| Task | Object detection with bounding boxes |
+| Architecture | Ultralytics YOLOv8n |
+| Detection classes | 1: `pothole` |
+| Parameters | 3,005,843 |
+| Compute | Approximately 8.1 GFLOPs per 640×640 image |
+| Model input | One RGB image, resized and letterboxed to `1 × 3 × 640 × 640` |
+| Model output | Up to 300 detections in `[x1, y1, x2, y2, confidence, class]` format |
+| Default confidence threshold | 35% |
+| Browser threshold range | 25%–90%, adjustable by the user |
+| PyTorch weights | `models/pothole_best.pt`, 5.96 MiB |
+| Browser weights | `site/models/pothole_best.onnx`, 11.70 MiB |
+| ONNX export | IR version 8, opset 17, built-in non-maximum suppression |
+| Browser runtime | ONNX Runtime Web 1.23.2 using WebAssembly on the visitor's device |
+| Python runtime | Ultralytics + OpenCV; CPU by default, CUDA GPU optional |
+| Browser inputs | JPG, PNG, WEBP, drag-and-drop, or live device camera |
+| Python inputs | Webcam index, video file, or compatible OpenCV stream URL |
+| Privacy | Browser images and camera frames are processed locally and are not uploaded |
+| Deployment | Static HTTPS site hosted by GitHub Pages |
+
+### Speed
+
+The saved Ultralytics GPU validation benchmark recorded approximately **7.0 ms preprocessing + 9.3 ms inference + 9.5 ms postprocessing = 25.8 ms per image**, or about **38.8 FPS**. This is a hardware-specific benchmark, not a guaranteed speed. During verification of the deployed WebAssembly version, the two sample images took approximately **481–564 ms per image** in the test browser. Browser speed varies substantially by CPU, device, browser, and power mode.
+
+### Current scope
+
+The detector identifies and draws boxes around visible potholes. It does **not** currently estimate physical distance, depth, dimensions, or severity; identify cracks as a separate class; attach GPS coordinates; or guarantee safe driving decisions. Those capabilities require additional sensors, labels, calibration, and evaluation.
 
 ## Run the browser app locally
 
